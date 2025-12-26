@@ -21,6 +21,24 @@ fun parseZdl(input: String): Any? {
     return convertToPlain(model as Map<*, *>)
 }
 
+/**
+ * API for parsing ZFL (ZenWave Flow Language) content
+ *
+ * Usage:
+ * ```javascript
+ * import { parseZfl } from '@zenwave360/zdl';
+ * const model = parseZfl(zflContent);
+ * console.log(JSON.stringify(model, null, 2));
+ * ```
+ */
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+fun parseZfl(input: String): Any? {
+    val parser = io.zenwave360.zfl.ZflParser()
+    val model = parser.parseModel(input)
+    return convertToPlain(model as Map<*, *>)
+}
+
 private fun convertToPlain(value: Any?): Any? {
     return when (value) {
         null -> null

@@ -1,22 +1,30 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.zdl.internal
 
+import io.zenwave360.antlr.ZdlBaseListener
+import io.zenwave360.antlr.ZdlParser
+import io.zenwave360.internal.JSONPath
+import io.zenwave360.internal.appendTo
+import io.zenwave360.internal.appendToList
+import io.zenwave360.internal.appendToWithMap
+import io.zenwave360.internal.buildMap
+import io.zenwave360.internal.with
 import org.antlr.v4.kotlinruntime.ParserRuleContext
 import org.antlr.v4.kotlinruntime.tree.ErrorNode
 import org.antlr.v4.kotlinruntime.tree.TerminalNode
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.camelCase
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.createCRUDMethods
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.first
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getArray
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getComplexValue
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getLocations
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getOptionValue
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getText
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.getValueText
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.javadoc
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.kebabCase
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.lowerCamelCase
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.pluralize
-import io.zenwave360.zdl.antlr.ZdlListenerUtils.snakeCase
+import io.zenwave360.zdl.internal.ZdlListenerUtils.camelCase
+import io.zenwave360.zdl.internal.ZdlListenerUtils.createCRUDMethods
+import io.zenwave360.zdl.internal.ZdlListenerUtils.first
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getArray
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getComplexValue
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getLocations
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getOptionValue
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getText
+import io.zenwave360.zdl.internal.ZdlListenerUtils.getValueText
+import io.zenwave360.zdl.internal.ZdlListenerUtils.javadoc
+import io.zenwave360.zdl.internal.ZdlListenerUtils.kebabCase
+import io.zenwave360.zdl.internal.ZdlListenerUtils.lowerCamelCase
+import io.zenwave360.zdl.internal.ZdlListenerUtils.pluralize
+import io.zenwave360.zdl.internal.ZdlListenerUtils.snakeCase
 
 class ZdlListenerImpl : ZdlBaseListener() {
 
@@ -61,7 +69,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val type = getText(ctx.api_type())
         val role = getText(ctx.api_role(), "provider")
         val jd = javadoc(ctx.javadoc())
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", name)
             .with("type", type)
             .with("role", role)
@@ -91,7 +100,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val jd = javadoc(ctx.javadoc())
         val disabled = ctx.plugin_disabled().DISABLED() != null
         val inherit = ctx.plugin_options()?.plugin_options_inherit()?.text ?: true
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", name)
             .with("javadoc", jd)
             .with("disabled", disabled)
@@ -289,7 +299,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
     override fun enterEnum(ctx: ZdlParser.EnumContext) {
         val name = getText(ctx.enum_name())!!
         val jd = javadoc(ctx.javadoc())
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", name)
             .with("type", "enums")
             .with("className", camelCase(name))
@@ -433,7 +444,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val serviceName = ctx.ID().text
         val serviceJavadoc = "Legacy service"
         val serviceAggregates = getArray(ctx.service_aggregates(), ",")
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", serviceName)
             .with("isLegacy", true)
             .with("className", camelCase(serviceName!!))
@@ -451,7 +463,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val aggregateName = getText(ctx.aggregate_name())
         val jd = javadoc(ctx.javadoc())
         val aggregateRoot = getText(ctx.aggregate_root())
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", aggregateName)
             .with("type", "aggregates")
             .with("className", camelCase(aggregateName!!))
@@ -500,7 +513,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val serviceName = getText(ctx.service_name())!!
         val serviceJavadoc = javadoc(ctx.javadoc())
         val serviceAggregates = getArray(ctx.service_aggregates(), ",")
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", serviceName)
             .with("className", camelCase(serviceName))
             .with("javadoc", serviceJavadoc)
@@ -583,7 +597,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val name = ctx.event_name().text
         val jd = javadoc(ctx.javadoc())
         val kebab = kebabCase(name)
-        currentStack.addLast(buildMap()
+        currentStack.addLast(
+            buildMap()
             .with("name", name)
             .with("className", camelCase(name)!!)
             .with("type", "events")

@@ -1,5 +1,9 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.zdl.internal
 
+import io.zenwave360.antlr.ZdlParser
+import io.zenwave360.internal.Inflector
+import io.zenwave360.internal.buildMap
+import io.zenwave360.internal.with
 import org.antlr.v4.kotlinruntime.ParserRuleContext
 
 internal object ZdlListenerUtils {

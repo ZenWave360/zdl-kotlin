@@ -15,11 +15,9 @@ val generateKotlinGrammarSource = tasks.register<com.strumenta.antlrkotlin.gradl
         include("**/*.g4")
     }
 
-    val pkgName = "io.zenwave360.zdl.antlr"
-    packageName = pkgName
-    arguments = listOf("-visitor")
+    packageName = "io.zenwave360.antlr"
 
-    val outDir = "generatedAntlr/${pkgName.replace(".", "/")}"
+    val outDir = "generatedAntlr/${packageName?.replace(".", "/")}"
     outputDirectory = layout.buildDirectory.dir(outDir).get().asFile
 }
 
@@ -163,8 +161,8 @@ kover {
     reports {
         filters {
             excludes {
-                // Exclude generated ANTLR code from coverage
-                // packages("io.zenwave360.zdl.antlr")
+                // skip generated parser
+                packages("io.zenwave360.antlr.*")
             }
         }
     }

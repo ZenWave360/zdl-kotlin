@@ -1,4 +1,4 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.zdl.internal
 
 import java.nio.file.Files
 import java.nio.file.Paths

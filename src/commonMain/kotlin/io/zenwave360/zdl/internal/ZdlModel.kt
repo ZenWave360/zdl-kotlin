@@ -1,4 +1,13 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.zdl.internal
+
+import io.zenwave360.internal.JSONPath
+import io.zenwave360.internal.appendTo
+import io.zenwave360.internal.appendToList
+import io.zenwave360.internal.appendToWithMap
+import io.zenwave360.internal.asJavaMap
+import io.zenwave360.internal.buildMap
+import io.zenwave360.internal.putEntry
+import io.zenwave360.internal.with
 
 class ZdlModel(private val delegate: MutableMap<String, Any?> = buildMap()) : MutableMap<String, Any?> by delegate {
 

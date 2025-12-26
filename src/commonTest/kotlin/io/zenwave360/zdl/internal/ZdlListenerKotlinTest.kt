@@ -1,5 +1,6 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.zdl.internal
 
+import io.zenwave360.internal.JSONPath
 import io.zenwave360.zdl.ZdlParser
 import kotlin.test.*
 

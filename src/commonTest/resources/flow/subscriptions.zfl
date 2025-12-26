@@ -1,0 +1,92 @@
+@import(subscriptions: "http://localhost:8080/subscription/model.zdl")
+@import(payments: "com.example.domain:payments:RELEASE")
+
+config {
+    basePackage "io.zenwave360.example.subscriptions"
+    persistence mongodb
+}
+
+/**
+ * Payment Flow for Subscription Renewals
+ */
+flow PaymentsFlow {
+
+    systems {
+        Subscription {
+            zdl: "subscription/model.zdl"
+            service {
+                commands: renewSubscription, suspendSubscription, cancelRenewal
+            }
+            events: SubscriptionRenewed, SubscriptionSuspended, RenewalCancelled
+        }
+
+        Payments {
+            service PaymentService {
+                commands: chargePayment, retryPayment, recordPayment
+            }
+            events: PaymentSucceeded, PaymentFailed, PaymentRetryScheduled, PaymentRecorded
+        }
+
+        Billing {
+            service BillingService {
+                commands: generateInvoice
+            }
+            events: InvoiceGenerated
+        }
+    }
+
+    @actor(Customer)
+    start CustomerRequestsSubscriptionRenewal {
+        subscriptionId String
+        customerId String
+        paymentMethodId String
+    }
+
+    @time("end of month")
+    start BillingCycleEnded {
+        billingPeriod String
+    }
+
+    @time("5 minutes after SubscriptionRenewed and not PaymentSucceeded or PaymentFailed")
+    start PaymentTimeout {
+    }
+
+    when CustomerRequestsSubscriptionRenewal {
+        command renewSubscription
+        event SubscriptionRenewed
+    }
+
+    when SubscriptionRenewed {
+        command chargePayment
+        event PaymentSucceeded
+        event PaymentFailed
+    }
+
+    when PaymentFailed {
+        if "less than 3 attempts" {
+            command retryPayment
+            event PaymentRetryScheduled
+        } else {
+            policy "Suspend after 3 failed attempts"
+            command suspendSubscription
+            event SubscriptionSuspended
+        }
+    }
+
+    when PaymentSucceeded and BillingCycleEnded {
+        command recordPayment
+        event PaymentRecorded
+    }
+
+    when PaymentTimeout {
+        command cancelRenewal
+        event RenewalCancelled
+    }
+
+    end {
+        completed: PaymentRecorded
+        suspended: SubscriptionSuspended
+        cancelled: RenewalCancelled
+    }
+}
+

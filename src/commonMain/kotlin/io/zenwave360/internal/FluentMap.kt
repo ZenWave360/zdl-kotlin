@@ -1,4 +1,4 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.internal
 
 /**
  * Utility functions for building and manipulating MutableMap instances with a fluent API.

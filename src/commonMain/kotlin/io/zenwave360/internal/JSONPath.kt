@@ -1,4 +1,6 @@
-package io.zenwave360.zdl.antlr
+package io.zenwave360.internal
+
+import kotlin.collections.get
 
 object JSONPath {
     fun <T> get(source: Any?, path: String): T? = get(source, path, null)
@@ -44,7 +46,7 @@ object JSONPath {
                         segments.add(current)
                         current = ""
                     }
-                    segments.add("..")
+                    segments.add("")
                     i += 2
                     continue
                 }
@@ -94,7 +96,7 @@ object JSONPath {
         val remaining = segments.drop(1)
 
         val result = when {
-            segment == ".." -> {
+            segment == "" -> {
                 // Recursive descent - collect all matching paths
                 val results = mutableListOf<Any?>()
                 
