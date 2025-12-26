@@ -1,37 +1,64 @@
 package io.zenwave360.zdl.antlr
 
-class FluentMap private constructor(
-    private val backingMap: MutableMap<String, Any?> = linkedMapOf()
-) : MutableMap<String, Any?> by backingMap {
+/**
+ * Utility functions for building and manipulating MutableMap instances with a fluent API.
+ * These replace the previous FluentMap class to avoid ClassCastException issues with Java interop.
+ */
 
-    companion object {
-        fun build(block: FluentMap.() -> Unit = {}): FluentMap =
-            FluentMap(linkedMapOf()).apply(block)
-    }
+/**
+ * Build a new MutableMap with optional initialization block.
+ */
+fun buildMap(block: MutableMap<String, Any?>.() -> Unit = {}): MutableMap<String, Any?> =
+    linkedMapOf<String, Any?>().apply(block)
 
-    // Provide access to underlying Java Map (useful for JSONPath on JVM)
-    fun asJavaMap(): MutableMap<String, Any?> = backingMap
+/**
+ * Put a key-value pair and return the map for chaining.
+ */
+fun MutableMap<String, Any?>.with(key: String, value: Any?): MutableMap<String, Any?> =
+    apply { this[key] = value }
 
-    // Idiomatic API (avoid signature clash with MutableMap.put)
-    fun putEntry(key: String, value: Any?): FluentMap = apply { backingMap[key] = value }
-    fun putAllEntries(map: Map<String, Any?>): FluentMap = apply { backingMap.putAll(map) }
+/**
+ * Put a key-value pair and return the map for chaining (alias for with).
+ */
+fun MutableMap<String, Any?>.putEntry(key: String, value: Any?): MutableMap<String, Any?> =
+    apply { this[key] = value }
 
-    fun appendTo(collection: String, key: String, value: Any?): FluentMap = apply {
-        val nestedMap = backingMap.getOrPut(collection) { linkedMapOf<String, Any?>() } as MutableMap<String, Any?>
-        nestedMap[key] = value
-    }
+/**
+ * Put all entries from another map and return the map for chaining.
+ */
+fun MutableMap<String, Any?>.putAllEntries(map: Map<String, Any?>): MutableMap<String, Any?> =
+    apply { this.putAll(map) }
 
-    fun appendToWithMap(collection: String, map: Map<String, Any?>): FluentMap = apply {
-        val nestedMap = backingMap.getOrPut(collection) { linkedMapOf<String, Any?>() } as MutableMap<String, Any?>
-        nestedMap.putAll(map)
-    }
-
-    fun appendToList(collection: String, value: Any?): FluentMap = apply {
-        val nestedList = backingMap.getOrPut(collection) { mutableListOf<Any?>() } as MutableList<Any?>
-        nestedList.add(value)
-    }
-
-    // Compatibility API (to be refactored later)
-    fun with(key: String, value: Any?): FluentMap = putEntry(key, value)
+/**
+ * Append a key-value pair to a nested map within this map.
+ * If the collection doesn't exist, it will be created as a LinkedHashMap.
+ */
+fun MutableMap<String, Any?>.appendTo(collection: String, key: String, value: Any?): MutableMap<String, Any?> = apply {
+    val nestedMap = this.getOrPut(collection) { linkedMapOf<String, Any?>() } as MutableMap<String, Any?>
+    nestedMap[key] = value
 }
+
+/**
+ * Append all entries from a map to a nested map within this map.
+ * If the collection doesn't exist, it will be created as a LinkedHashMap.
+ */
+fun MutableMap<String, Any?>.appendToWithMap(collection: String, map: Map<String, Any?>): MutableMap<String, Any?> = apply {
+    val nestedMap = this.getOrPut(collection) { linkedMapOf<String, Any?>() } as MutableMap<String, Any?>
+    nestedMap.putAll(map)
+}
+
+/**
+ * Append a value to a nested list within this map.
+ * If the collection doesn't exist, it will be created as a MutableList.
+ */
+fun MutableMap<String, Any?>.appendToList(collection: String, value: Any?): MutableMap<String, Any?> = apply {
+    val nestedList = this.getOrPut(collection) { mutableListOf<Any?>() } as MutableList<Any?>
+    nestedList.add(value)
+}
+
+/**
+ * Returns this map (useful for Java interop compatibility).
+ * Previously used to unwrap FluentMap to underlying map.
+ */
+fun MutableMap<String, Any?>.asJavaMap(): MutableMap<String, Any?> = this
 

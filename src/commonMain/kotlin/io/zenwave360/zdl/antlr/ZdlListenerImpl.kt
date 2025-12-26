@@ -21,7 +21,7 @@ import io.zenwave360.zdl.antlr.ZdlListenerUtils.snakeCase
 class ZdlListenerImpl : ZdlBaseListener() {
 
     val model = ZdlModel()
-    private val currentStack = ArrayDeque<FluentMap>()
+    private val currentStack = ArrayDeque<MutableMap<String, Any?>>()
     private var currentCollection: String? = null
 
 //    fun getModel(): ZdlModel = model
@@ -45,7 +45,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
     override fun enterImport_(ctx: ZdlParser.Import_Context) {
         val name = getText(ctx.import_key())
         val value = getValueText(ctx.import_value()?.string())
-        model.appendToList("imports", FluentMap.build()
+        model.appendToList("imports", buildMap()
             .with("key", name)
             .with("value", value))
     }
@@ -61,13 +61,13 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val type = getText(ctx.api_type())
         val role = getText(ctx.api_role(), "provider")
         val jd = javadoc(ctx.javadoc())
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", name)
             .with("type", type)
             .with("role", role)
             .with("javadoc", jd)
-            .with("options", FluentMap.build())
-            .with("config", FluentMap.build())
+            .with("options", buildMap())
+            .with("config", buildMap())
         )
         model.appendTo("apis", name, currentStack.last())
 
@@ -91,11 +91,11 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val jd = javadoc(ctx.javadoc())
         val disabled = ctx.plugin_disabled().DISABLED() != null
         val inherit = ctx.plugin_options()?.plugin_options_inherit()?.text ?: true
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", name)
             .with("javadoc", jd)
             .with("disabled", disabled)
-            .with("options", FluentMap.build().with("inherit", inherit))
+            .with("options", buildMap().with("inherit", inherit))
         )
         model.appendTo("plugins", name, currentStack.last())
 
@@ -130,7 +130,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val name = getText(ctx.policie_name())!!
         val value = getValueText(ctx.policie_value().simple())
         val aggregate = (ctx.getParent()?.getParent() as ZdlParser.PoliciesContext).policy_aggregate()
-        model.appendToWithMap("policies", FluentMap.build().with(name, FluentMap.build().with("name", name).with("value", value).with("aggregate", aggregate)))
+        model.appendToWithMap("policies", buildMap().with(name, buildMap().with("name", name).with("value", value).with("aggregate", aggregate)))
         super.enterPolicie_body(ctx)
     }
 
@@ -152,11 +152,11 @@ class ZdlListenerImpl : ZdlBaseListener() {
 
     override fun exitEntity(ctx: ZdlParser.EntityContext) { currentStack.removeLast() }
 
-    private fun processEntity(name: String, javadoc: String?, tableName: String?): FluentMap {
+    private fun processEntity(name: String, javadoc: String?, tableName: String?): MutableMap<String, Any?> {
         val className = camelCase(name)!!
         val instanceName = lowerCamelCase(className)!!
         val kebab = kebabCase(name)!!
-        return FluentMap.build()
+        return buildMap()
             .with("name", name)
             .with("className", className)
             .with("tableName", tableName ?: snakeCase(name))
@@ -166,8 +166,8 @@ class ZdlListenerImpl : ZdlBaseListener() {
             .with("kebabCase", kebab)
             .with("kebabCasePlural", pluralize(kebab))
             .with("javadoc", javadoc)
-            .with("options", FluentMap.build())
-            .with("fields", FluentMap.build())
+            .with("options", buildMap())
+            .with("fields", buildMap())
     }
 
     override fun enterOption(ctx: ZdlParser.OptionContext) {
@@ -175,7 +175,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val value = getOptionValue(ctx.option_value())
         if (currentStack.isNotEmpty()) {
             currentStack.last().appendTo("options", name, value)
-            currentStack.last().appendToList("optionsList", FluentMap.build().with("name", name).with("value", value))
+            currentStack.last().appendToList("optionsList", buildMap().with("name", name).with("value", value))
         }
         super.enterOption(ctx)
     }
@@ -193,7 +193,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
             type = "byte[]"
             isArray = false
         }
-        val field = FluentMap.build()
+        val field = buildMap()
             .with("name", name)
             .with("type", type)
             .with("initialValue", initialValue)
@@ -203,7 +203,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
             .with("isEntity", isEntity)
             .with("isArray", isArray)
             .with("isComplexType", false)
-            .with("options", FluentMap.build())
+            .with("options", buildMap())
             .with("validations", validations)
         currentStack.last().appendTo("fields", name, field)
 
@@ -221,7 +221,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
     }
 
     private fun processFieldValidations(field_validations: List<ZdlParser.Field_validationsContext>?): Map<String, Any?> {
-        val validations = FluentMap.build()
+        val validations = buildMap()
         field_validations?.forEach { v ->
             val name = getText(v.field_validation_name())!!
             var value: Any? = first(getText(v.field_validation_value()), "")
@@ -242,13 +242,15 @@ class ZdlListenerImpl : ZdlBaseListener() {
     override fun enterNested_field(ctx: ZdlParser.Nested_fieldContext) {
         val parent = ctx.getParent() as ZdlParser.FieldContext
         val parentEntity = currentStack[currentStack.size - 2]
-        val parentEntityFields = parentEntity["fields"] as FluentMap
-        val parentField = ArrayList(parentEntityFields.values)[parentEntityFields.size - 1]
+        @Suppress("UNCHECKED_CAST")
+        val parentEntityFields = parentEntity["fields"] as MutableMap<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val parentField = ArrayList(parentEntityFields.values)[parentEntityFields.size - 1] as MutableMap<String, Any?>
         val entityName = parent.field_type().ID()!!.text
         val entityJavadoc = javadoc(parent.javadoc())
         val tableName = getText(parent.entity_table_name())
         val validations = processNestedFieldValidations(ctx.nested_field_validations())
-        (parentField as FluentMap).appendToWithMap("validations", validations)
+        parentField.appendToWithMap("validations", validations)
         currentStack.addLast(processEntity(entityName, entityJavadoc, tableName).with("type", currentCollection!!.split(".")[0]))
         currentStack.last().appendTo("options", "embedded", true)
         @Suppress("UNCHECKED_CAST")
@@ -273,7 +275,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
     }
 
     private fun processNestedFieldValidations(field_validations: List<ZdlParser.Nested_field_validationsContext>?): Map<String, Any?> {
-        val validations = FluentMap.build()
+        val validations = buildMap()
         field_validations?.forEach { v ->
             val name = getText(v.nested_field_validation_name())!!
             val value = first(getText(v.nested_field_validation_value()), "")
@@ -287,7 +289,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
     override fun enterEnum(ctx: ZdlParser.EnumContext) {
         val name = getText(ctx.enum_name())!!
         val jd = javadoc(ctx.javadoc())
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", name)
             .with("type", "enums")
             .with("className", camelCase(name))
@@ -310,7 +312,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         if (value != null) {
             currentStack.last().with("hasValue", true)
         }
-        currentStack.last().appendTo("values", name, FluentMap.build()
+        currentStack.last().appendTo("values", name, buildMap()
             .with("name", name)
             .with("javadoc", jd)
             .with("comment", jd)
@@ -323,7 +325,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val relationshipType = parent.relationship_type().text
         val relationshipName = removeJavadoc(relationshipType + "_" + relationshipDescription(ctx.relationship_from().relationship_definition()) + "_" + relationshipDescription(ctx.relationship_to().relationship_definition()))
 
-        val relationship = FluentMap.build().with("type", relationshipType).with("name", relationshipName)
+        val relationship = buildMap().with("type", relationshipType).with("name", relationshipName)
         val location = "relationships.$relationshipName"
         model.setLocation(location, getLocations(ctx))
 
@@ -384,7 +386,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
     }
 
     private fun relationshipValidations(relationshipDefinitionContext: ZdlParser.Relationship_definitionContext): Any? {
-        val validations = FluentMap.build()
+        val validations = buildMap()
         relationshipDefinitionContext.relationship_field_validations()?.let { rf ->
             rf.relationship_field_required()?.let {
                 val name = "required"
@@ -431,7 +433,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val serviceName = ctx.ID().text
         val serviceJavadoc = "Legacy service"
         val serviceAggregates = getArray(ctx.service_aggregates(), ",")
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", serviceName)
             .with("isLegacy", true)
             .with("className", camelCase(serviceName!!))
@@ -449,13 +451,13 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val aggregateName = getText(ctx.aggregate_name())
         val jd = javadoc(ctx.javadoc())
         val aggregateRoot = getText(ctx.aggregate_root())
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", aggregateName)
             .with("type", "aggregates")
             .with("className", camelCase(aggregateName!!))
             .with("javadoc", jd)
             .with("aggregateRoot", aggregateRoot)
-            .with("commands", FluentMap.build())
+            .with("commands", buildMap())
         )
         model.appendTo("aggregates", aggregateName, currentStack.last())
 
@@ -477,7 +479,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val withEvents = getServiceMethodEvents(location, ctx.with_events())
         val jd = javadoc(first(ctx.javadoc(), ctx.suffix_javadoc()))
 
-        val method = FluentMap.build()
+        val method = buildMap()
             .with("name", commandName)
             .with("aggregateName", aggregateName)
             .with("parameter", parameter)
@@ -498,12 +500,12 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val serviceName = getText(ctx.service_name())!!
         val serviceJavadoc = javadoc(ctx.javadoc())
         val serviceAggregates = getArray(ctx.service_aggregates(), ",")
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", serviceName)
             .with("className", camelCase(serviceName))
             .with("javadoc", serviceJavadoc)
             .with("aggregates", serviceAggregates)
-            .with("methods", FluentMap.build())
+            .with("methods", buildMap())
         )
         model.appendTo("services", serviceName, currentStack.last())
 
@@ -531,7 +533,7 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val withEvents = getServiceMethodEvents(location, ctx.with_events())
         val jd = javadoc(first(ctx.javadoc(), ctx.suffix_javadoc()))
 
-        val method = FluentMap.build()
+        val method = buildMap()
             .with("name", methodName)
             .with("serviceName", serviceName)
             .with("naturalId", naturalId)
@@ -581,13 +583,13 @@ class ZdlListenerImpl : ZdlBaseListener() {
         val name = ctx.event_name().text
         val jd = javadoc(ctx.javadoc())
         val kebab = kebabCase(name)
-        currentStack.addLast(FluentMap.build()
+        currentStack.addLast(buildMap()
             .with("name", name)
             .with("className", camelCase(name)!!)
             .with("type", "events")
             .with("kebabCase", kebab)
             .with("javadoc", jd)
-            .with("fields", FluentMap.build())
+            .with("fields", buildMap())
         )
         model.appendTo("events", name, currentStack.last())
         currentCollection = "events"

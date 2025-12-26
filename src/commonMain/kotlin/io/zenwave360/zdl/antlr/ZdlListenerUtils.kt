@@ -67,7 +67,7 @@ internal object ZdlListenerUtils {
 
     fun getObject(ctx: ZdlParser.ObjectContext?): Any? {
         if (ctx == null) return null
-        val map = FluentMap.build()
+        val map = buildMap()
         ctx.pair().forEach { pair ->
             map.put(pair.string().let { getValueText(it).toString() }, getValue(pair.value()))
         }
@@ -76,7 +76,7 @@ internal object ZdlListenerUtils {
 
     fun getObjectFromPairs(ctx: ZdlParser.PairsContext?): Any? {
         if (ctx == null) return null
-        val map = FluentMap.build()
+        val map = buildMap()
         ctx.pair().forEach { pair ->
             map.put(pair.string().let { getValueText(it).toString() }, getValue(pair.value()))
         }
@@ -137,7 +137,7 @@ internal object ZdlListenerUtils {
     }
 
     fun createCRUDMethods(serviceName: String, entities: List<String>): Map<String, Any?> {
-        val methods = FluentMap.build()
+        val methods = buildMap()
         for (entity in entities) {
             createCRUDMethods(serviceName, entity.trim()).forEach { k -> methods.put(k["name"].toString(), k) }
         }
@@ -149,52 +149,52 @@ internal object ZdlListenerUtils {
         val entityIdPath = path + "/{" + inflector.lowerCamelCase(entity) + "Id}"
         val crudMethods = mutableListOf<Map<String, Any?>>()
         crudMethods.add(
-            FluentMap.build()
+            buildMap()
                 .with("name", "create" + entity)
                 .with("serviceName", serviceName)
                 .with("parameter", entity)
                 .with("returnType", entity)
-                .with("options", FluentMap.build().with("post", path))
+                .with("options", buildMap().with("post", path))
                 .with("optionsList", listOf(mapOf("name" to "post", "value" to path)))
         )
         crudMethods.add(
-            FluentMap.build()
+            buildMap()
                 .with("name", "update" + entity)
                 .with("serviceName", serviceName)
                 .with("paramId", "id")
                 .with("parameter", entity)
                 .with("returnType", entity)
                 .with("returnTypeIsOptional", true)
-                .with("options", FluentMap.build().with("put", entityIdPath))
+                .with("options", buildMap().with("put", entityIdPath))
                 .with("optionsList", listOf(mapOf("name" to "put", "value" to entityIdPath)))
         )
         crudMethods.add(
-            FluentMap.build()
+            buildMap()
                 .with("name", "get" + entity)
                 .with("serviceName", serviceName)
                 .with("paramId", "id")
                 .with("returnType", entity)
                 .with("returnTypeIsOptional", true)
-                .with("options", FluentMap.build().with("get", entityIdPath))
+                .with("options", buildMap().with("get", entityIdPath))
                 .with("optionsList", listOf(mapOf("name" to "get", "value" to entityIdPath)))
         )
         crudMethods.add(
-            FluentMap.build()
+            buildMap()
                 .with("name", "list" + pluralize(entity))
                 .with("serviceName", serviceName)
                 .with("paginated", true)
                 .with("returnType", entity)
                 .with("returnTypeIsArray", true)
-                .with("options", FluentMap.build().with("paginated", true))
-                .with("options", FluentMap.build().with("get", path))
+                .with("options", buildMap().with("paginated", true))
+                .with("options", buildMap().with("get", path))
                 .with("optionsList", listOf(mapOf("name" to "get", "value" to path)))
         )
         crudMethods.add(
-            FluentMap.build()
+            buildMap()
                 .with("name", "delete" + entity)
                 .with("serviceName", serviceName)
                 .with("paramId", "id")
-                .with("options", FluentMap.build().with("delete", entityIdPath))
+                .with("options", buildMap().with("delete", entityIdPath))
                 .with("optionsList", listOf(mapOf("name" to "delete", "value" to entityIdPath)))
         )
         return crudMethods
