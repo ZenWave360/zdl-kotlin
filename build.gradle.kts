@@ -162,7 +162,7 @@ kover {
         filters {
             excludes {
                 // skip generated parser
-                packages("io.zenwave360.antlr.*")
+                packages("io.zenwave360.antlr")
             }
         }
     }
